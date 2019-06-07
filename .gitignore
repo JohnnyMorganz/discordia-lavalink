@@ -1,0 +1,6 @@
+/deps
+/lavalink
+/old
+test.lua
+discordia.log
+gateway.json
