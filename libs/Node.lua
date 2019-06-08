@@ -1,6 +1,7 @@
 local discordia = require('discordia')
 local websocket = require('coro-websocket')
 local json = require('json')
+local timer = require('timer')
 
 local Emitter = discordia.Emitter
 local class = discordia.class
@@ -23,11 +24,11 @@ function Node:__init(client, options)
   self._res = nil
   self._read = nil
   self._write = nil
-  self._reconnect = nil
   self._reconnectInterval = options.reconnectInterval or 15000
+  self._reconnectAttempts = 0
   self._stats = {}
 
-  coroutine.wrap(self.connect)(self)
+  self:connect()
 end
 
 function Node:connect()
@@ -44,15 +45,18 @@ function Node:connect()
   if res and res.code == 101 then
     self._connected = true
     self._res, self._read, self._write = res, read, write
-    self:_onReady()
-    self:_handleData()
+    coroutine.wrap(self._handleData)(self)
     return true
   end
-  error(format('Unable to connect to Lavalink: %s', read))
+  return false, read
 end
 
-function Node:close()
-
+function Node:close(forced)
+  if not self._connected then return end
+  self._connected = false
+  self._write()
+  self._res, self._read, self._write = nil, nil, nil
+  if not forced then self:_reconnect() end
 end
 
 function Node:send(data)
@@ -66,11 +70,25 @@ end
 function Node:destroy()
   -- Currently have to get all available listener names and remove them
   self:removeAllListeners('event')
-  self:close()
+  self:close(true)
 end
 
-function Node:_onClose()
-  self._connected = false
+function Node:_reconnect()
+  print('Reconnecting')
+  local success = self:connect()
+  if not success then
+    self._reconnectAttempts = self._reconnectAttempts + 1
+    if self._reconnectAttempts > 10 then
+      print('Error, could not reconnect after 10 retries')
+      return
+    end
+    print(format('Could not reconnect, retrying in %sms - Attempt %s', self._reconnectInterval, self._reconnectAttempts))
+    timer.sleep(self._reconnectInterval)
+    self:_reconnect()
+  else
+    self._reconnectAttempts = 0
+    print('Reconnected')
+  end
 end
 
 function Node:_handleData()
@@ -89,6 +107,7 @@ function Node:_handleData()
     elseif data.opcode == 8 then -- CLOSE sent
     end
   end
+  self:close()
 end
 
 -- Getters
