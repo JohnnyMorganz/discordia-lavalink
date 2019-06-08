@@ -33,15 +33,7 @@ end
 
 function API:get(id)
   local body, err = self:_request(id)
-  if body then
-    if body.tracks then
-      return body.tracks
-    else
-      return nil, 'Unable to find any tracks'
-    end
-  else
-    return nil, err
-  end
+  return body, err
 end
 
 -- Helper Functions --
