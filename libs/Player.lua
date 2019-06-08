@@ -26,6 +26,7 @@ function Player:__init(manager, node, guild, channel)
   self._startedAt = nil
 
   self._node:on('event', bind(self, '_onEvent'))
+  self._node:on('killed', bind(self, '_onNodeKilled'))
 end
 
 function Player:play(track, options)
@@ -111,14 +112,16 @@ function Player:equalizer(band, gain)
   return self
 end
 
-function Player:destroy()
+function Player:destroy(byNode)
   -- Currently have to get all available listener names and remove them
   self:removeAllListeners('end')
   self:removeAllListeners('warn')
-  self._node:send({
-    op = 'destroy',
-    guildId = self._guild.id
-  })
+  if not byNode then
+    self._node:send({
+      op = 'destroy',
+      guildId = self._guild.id
+    })
+  end
   return nil
 end
 
@@ -159,6 +162,11 @@ function Player:_onEvent(data)
   else
     self:emit('warn', format('Unknown Event %s', data.type))
   end
+end
+
+function Player:_onNodeKilled()
+  self._manager:leave(self._guild)
+  self:destroy(true)
 end
 
 function get.playing(self)

@@ -69,6 +69,7 @@ end
 
 function Node:destroy()
   -- Currently have to get all available listener names and remove them
+  self:emit('killed')
   self:removeAllListeners('event')
   self:close(true)
 end
@@ -80,7 +81,7 @@ function Node:_reconnect()
     self._reconnectAttempts = self._reconnectAttempts + 1
     if self._reconnectAttempts > 10 then
       print('Error, could not reconnect after 10 retries')
-      return
+      return self:destroy()
     end
     print(format('Could not reconnect, retrying in %sms - Attempt %s', self._reconnectInterval, self._reconnectAttempts))
     timer.sleep(self._reconnectInterval)
