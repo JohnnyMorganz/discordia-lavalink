@@ -50,9 +50,12 @@ function VoiceManager:_createNode(options)
 end
 
 function VoiceManager:_deleteNode(host)
-  -- TODO Get Node By Host
-  -- TODO Clear Event Emitters from Node
-  -- TODO Delete Node
+  local node = self._nodes[host]
+  if not node then return false end
+  node:removeAllListeners()
+  node:destroy()
+  self._nodes[host] = nil
+  return true
 end
 
 function VoiceManager:_spawnPlayer(guild, channel, host)
