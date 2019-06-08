@@ -64,6 +64,12 @@ function Node:send(data)
   })
 end
 
+function Node:destroy()
+  -- Currently have to get all available listener names and remove them
+  self:removeAllListeners('event')
+  self:close()
+end
+
 function Node:_onReady()
   self._ready = true
 end

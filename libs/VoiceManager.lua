@@ -52,7 +52,6 @@ end
 function VoiceManager:_deleteNode(host)
   local node = self._nodes[host]
   if not node then return false end
-  node:removeAllListeners()
   node:destroy()
   self._nodes[host] = nil
   return true
