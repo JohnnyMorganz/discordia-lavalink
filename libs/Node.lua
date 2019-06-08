@@ -19,7 +19,6 @@ function Node:__init(client, options)
   self._address = options.address or format('ws://%s:%s/', self._host, self._port)
   self._password = options.password or 'youshallnotpass'
 
-  self._ready = false
   self._connected = false
   self._res = nil
   self._read = nil
@@ -68,10 +67,6 @@ function Node:destroy()
   -- Currently have to get all available listener names and remove them
   self:removeAllListeners('event')
   self:close()
-end
-
-function Node:_onReady()
-  self._ready = true
 end
 
 function Node:_onClose()
