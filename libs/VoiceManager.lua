@@ -93,8 +93,7 @@ function VoiceManager:leave(guild)
 
   local player = self._players[guild.id]
   if player then
-    player:removeAllListeners()
-    player:_destroy()
+    player:destroy()
     self._players[guild.id] = nil
   end
   return true

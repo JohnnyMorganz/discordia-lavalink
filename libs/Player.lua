@@ -112,6 +112,9 @@ function Player:equalizer(band, gain)
 end
 
 function Player:destroy()
+  -- Currently have to get all available listener names and remove them
+  self:removeAllListeners('end')
+  self:removeAllListeners('warn')
   self._node:send({
     op = 'destroy',
     guildId = self._guild.id
