@@ -97,16 +97,17 @@ function Node:_handleData()
   for data in self._read do
     if data.opcode == 1 then
       local payload = json.decode(data.payload)
-      if payload.opcode == 'playerUpdate' then
+      if payload.op == 'playerUpdate' then
         self:emit('event', payload)
-      elseif payload.opcode == 'stats' then
+      elseif payload.op == 'stats' then
         payload.op = nil
         self._stats = payload
-        print('UPDATED STATS')
-      elseif payload.opcode == 'event' then
+        self:emit('stats', self._stats)
+      elseif payload.op == 'event' then
         self:emit('event', payload)
       end
     elseif data.opcode == 8 then -- CLOSE sent
+      self:close()
     end
   end
   self:close()
