@@ -46,6 +46,7 @@ function Node:connect()
     self._connected = true
     self._res, self._read, self._write = res, read, write
     coroutine.wrap(self._handleData)(self)
+    print('Lavalink Node Connected')
     return true
   end
   return false, read
