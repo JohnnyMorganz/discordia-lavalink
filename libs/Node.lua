@@ -61,7 +61,7 @@ function Node:close(forced)
 end
 
 function Node:send(data)
-  if not self._connected then return end
+  if not self._connected then return false, 'Not connected' end
   return self._write({
     opcode = 1,
     payload = json.encode(data)
