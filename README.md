@@ -1,5 +1,5 @@
 
-# Lavalink for Discordia [0.1.0]
+# Lavalink for Discordia [0.0.1]
 This library is a Lavalink Client for [Discordia](https://github.com/SinisterRectus/Discordia)
 ## What is Lavalink?
 Lavalink is an alternative method for playing audio in Discord Voice Channels. You can read more about it [here](https://github.com/Frederikam/Lavalink)
