@@ -40,12 +40,15 @@ function Player:play(track, options)
   if options.endTime then data.endTime = options.endTime end -- End time of track (milliseconds)
   -- if options.noReplace then data.noReplace = options.noReplace end -- Ignore if already currently playing song TODO: Will this affect the client
   self:_clearTrack()
-  self._node:send(data)
-  self._playing = true
-  self._paused = false
-  self._track = track
-  self._startedAt = os.time(os.date('!*t'))
-  return self
+  local success, err = self._node:send(data)
+  if success then
+    self:_clearTrack()
+    self._playing = true
+    self._paused = false
+    self._track = track
+    self._startedAt = os.time(os.date('!*t'))
+  end
+  return success, err
 end
 
 function Player:pause(pause)
