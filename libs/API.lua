@@ -10,6 +10,7 @@ local format = string.format
 
 function API:__init(manager)
   self._manager = manager
+  self._cache = {}
 end
 
 function API:_request(identifier)

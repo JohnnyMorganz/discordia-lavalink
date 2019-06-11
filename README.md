@@ -43,3 +43,4 @@ end)
 ```
 ### TODO:
 - Add automatic load balancing for selecting a node for Player to join
+- Handle caching in the API
