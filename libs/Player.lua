@@ -38,22 +38,26 @@ function Player:play(track, options)
   }
   if options.startTime then data.startTime = options.startTime end -- Start time of track (milliseconds)
   if options.endTime then data.endTime = options.endTime end -- End time of track (milliseconds)
-  if options.noReplace then data.noReplace = options.noReplace end -- Ignore if already currently playing song
+  -- if options.noReplace then data.noReplace = options.noReplace end -- Ignore if already currently playing song TODO: Will this affect the client
+  self:_clearTrack()
   self._node:send(data)
+  self._playing = true
+  self._paused = false
   self._track = track
   self._startedAt = os.time(os.date('!*t'))
   return self
 end
 
 function Player:pause(pause)
+  if not self._playing then return false, 'No track being played' end
   if pause == nil then pause = true end
-  self._node:send({
+  local success, err = self._node:send({
     op = 'pause',
     guildId = self._guild.id,
     pause = pause
   })
-  self._paused = pause
-  return self
+  if success then self._paused = pause end
+  return success, err
 end
 
 function Player:resume()
@@ -61,37 +65,36 @@ function Player:resume()
 end
 
 function Player:stop()
-  self._node:send({
+  if not self._playing then return false, 'No track being played' end
+  local success, err = self._node:send({
     op = 'stop',
     guildId = self._guild.id
   })
-  self._playing = false
-  self._track = nil
-  self._lastChecked = nil
-  self._trackPosition = nil
-  return self
+  if success then self:_clearTrack() end
+  return success, err
 end
 
 function Player:seek(position) -- milliseconds
+  if not self._playing then return false, 'No track being played' end
   if not position then return false, 'No position provided' end
-  self._node:send({
+  local success, err = self._node:send({
     op = 'seek',
     guildId = self._guild.id,
     position = position
   })
-  return self
+  return success, err
 end
 
 function Player:volume(volume)
   volume = volume or 100
   if volume < 0 then return false, 'Min volume is 0' end
   if volume > 1000 then return false, 'Max volume is 1000' end
-  self._node:send({
+  local success, err = self._node:send({
     op = 'volume',
     guildId = self._guild.id,
     volume = volume
   })
-  return self
+  return success, err
 end
 
 function Player:equalizer(band, gain)
@@ -101,7 +104,7 @@ function Player:equalizer(band, gain)
   gain = gain or 0
   if gain < -0.25 then return false, 'Min gain is -0.25' end
   if gain > 1 then return false, 'Max gain is 1.0' end
-  self._node:send({
+  local success, err = self._node:send({
     op = 'equalizer',
     guildId = self._guild.id,
     bands = {
@@ -109,22 +112,25 @@ function Player:equalizer(band, gain)
       gain = gain
     }
   })
-  return self
+  return success, err
 end
 
 function Player:destroy(byNode)
   -- Currently have to get all available listener names and remove them
+  self:_clearTrack()
   self:removeAllListeners('end')
   self:removeAllListeners('warn')
   if not byNode then
-    self._node:send({
+    local success, err = self._node:send({
       op = 'destroy',
       guildId = self._guild.id
     })
+    return success, err
   end
-  return nil
+  return true
 end
 
+-- Should this be part of the library?
 function Player:moveChannel(channel)
   if channel.id == self._channel.id then return false end
   self._channel = channel
@@ -140,6 +146,14 @@ function Player:_connect(sessionId, event)
   })
 end
 
+function Player:_clearTrack()
+  self._playing = false
+  self._track = nil
+  self._startedAt = nil
+  self._lastChecked = nil
+  self._trackPosition = nil
+end
+
 function Player:_onEvent(data)
   if data.guildId ~= self._guild.id then return end
   if data.op == 'playerUpdate' then
@@ -147,15 +161,12 @@ function Player:_onEvent(data)
     self._trackPosition = data.state.position
     self._lastChecked = data.state.time
   elseif data.type == 'TrackEndEvent' then
-    if data.reason ~= 'REPLACED' then
-      self._playing = false
-      self._track = nil
-      self._startedAt = nil
-      self._lastChecked = nil
-      self._trackPosition = nil
-    end
-    self:emit('end', data)
+    -- data.reason: FINISHED, LOAD_FAILED, STOPPED, REPLACED, CLEANUP
+    self:_clearTrack()
+    self:emit('end', data.reason:lower())
   elseif data.type == 'TrackExceptionEvent' then
+    self:_clearTrack()
+    self:emit('end', 'error', data.error)
   elseif data.type == 'TrackStuckEvent' then
     self:stop()
     self:emit('end', data)
@@ -165,6 +176,8 @@ function Player:_onEvent(data)
 end
 
 function Player:_onNodeKilled()
+  self:emit('end', 'error', 'Node has been killed')
+  self:emit('error', 'Node has been killed')
   self._manager:leave(self._guild)
   self:destroy(true)
 end
