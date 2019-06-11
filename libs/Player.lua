@@ -2,7 +2,7 @@ local discordia = require('discordia')
 local Emitter = discordia.Emitter
 local class = discordia.class
 
-local Player, get = class('Player', Emitter)
+local Player, get = class('LavalinkPlayer', Emitter)
 local format = string.format
 local function bind(t, k)
   return function(...) return t[k](t, ...) end

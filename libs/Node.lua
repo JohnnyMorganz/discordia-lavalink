@@ -6,7 +6,7 @@ local timer = require('timer')
 local Emitter = discordia.Emitter
 local class = discordia.class
 
-local Node, get = class('Node', Emitter)
+local Node, get = class('LavalinkNode', Emitter)
 
 local format = string.format
 
