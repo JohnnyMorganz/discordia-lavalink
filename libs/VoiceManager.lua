@@ -80,6 +80,8 @@ function VoiceManager:join(channel, host)
   -- Join to Channel
   local success, err = self._client._shards[guild.shardId]:updateVoice(guild.id, channel.id)
   if not success then return nil, err end
+  --local success, err = channel:join() -- TODO: Use when Discordia Voice System has been updated
+  --if not success then return nil, err end
   return self:_spawnPlayer(guild, channel, host)
 end
 
